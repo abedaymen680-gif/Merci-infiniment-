@@ -1,4 +1,4 @@
-name: Get Direct Video Link V2
+name: IPTV 1 Minute Test
 
 on:
   workflow_dispatch:
@@ -10,17 +10,16 @@ jobs:
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Download IPTV Clip
+      - name: Download 1 Minute from IPTV
         run: |
+          # سيقوم بسحب 60 ثانية فقط وتحويل الحاوية إلى mp4 لضمان عملها في فيسبوك
           ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 \
           -i "http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/269.ts" \
-          -t 60 -c copy video_clip.mp4
+          -t 60 -c copy test_stream.mp4
 
-      - name: Upload to BashUpload
+      - name: Upload to 0x0.st
         run: |
-          # الرفع إلى سيرفر بديل مستقر
-          LINK=$(curl https://bashupload.com/video_clip.mp4 --data-binary @video_clip.mp4)
           echo "--------------------------------------------------"
-          echo "تم الرفع بنجاح! انسخ الرابط التالي:"
-          echo $LINK
+          echo "تمت العملية بنجاح! انسخ الرابط التالي وضعه في فيسبوك:"
+          curl -F "file=@test_stream.mp4" https://0x0.st
           echo "--------------------------------------------------"
