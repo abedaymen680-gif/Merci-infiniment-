@@ -1,0 +1,26 @@
+name: Robust 1 Minute Download
+
+on:
+  workflow_dispatch:
+
+jobs:
+  download_and_send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Download 1 Minute (New User-Agent)
+        run: |
+          # استخدام User-Agent لمتصفح كروم حقيقي لضمان الاتصال
+          ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
+          -user_agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+          -i "http://5-host.xyz:8080/live/177716153252/17laOe555B/431637.m3u8" \
+          -t 60 -c copy -bsf:a aac_adtstoasc final_clip.mp4
+
+      - name: Send to Telegram
+        run: |
+          # إرسال الملف الناتج فوراً
+          curl -v -F "video=@final_clip.mp4" -F "caption=تم تحميل الدقيقة بنجاح ✅" \
+          "https://api.telegram.org/bot8553237214:AAGnvhfyXa-B5Wkm3g_VQTRVbbr0ShyYM0U/sendVideo?chat_id=6849625315"
+          
