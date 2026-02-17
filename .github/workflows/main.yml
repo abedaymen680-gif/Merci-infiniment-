@@ -1,4 +1,4 @@
-name: IPTV to Direct Link (Stable Version)
+name: IPTV to Direct Link (Final Fix)
 
 on:
   workflow_dispatch:
@@ -8,27 +8,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install Tools
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg jq
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
       - name: Capture 1 Minute
         run: |
-          # سحب دقيقة واحدة وتحويلها لـ MP4
-          ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
+          ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 \
           -i "http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/269.ts" \
           -t 60 -c copy test_video.mp4
 
-      - name: Upload to File.io
+      - name: Upload to BashUpload
         run: |
-          # رفع الملف والحصول على الرابط
-          RESPONSE=$(curl -s -F "file=@test_video.mp4" https://file.io)
-          
-          # استخراج الرابط من النتيجة
-          LINK=$(echo $RESPONSE | jq -r '.link')
-          
           echo "--------------------------------------------------"
-          echo "✅ تم الرفع بنجاح!"
-          echo "🔗 الرابط المباشر للمشاهدة:"
-          echo "$LINK"
+          # الرفع مع التمويه لتجاوز الحظر
+          curl -L -A "Mozilla/5.0" https://bashupload.com/test_video.mp4 --data-binary @test_video.mp4 > result.txt
+          
+          echo "✅ تم الرفع! انسخ الرابط أدناه:"
+          grep -o 'https://bashupload.com/[^ ]*' result.txt | head -n 1
           echo "--------------------------------------------------"
-          echo "نصيحة: انسخ الرابط وضعه في منشور (أنا فقط) على فيسبوك للمشاهدة مجاناً."
           
