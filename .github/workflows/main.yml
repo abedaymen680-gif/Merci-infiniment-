@@ -1,35 +1,27 @@
-name: IPTV to GitHub Direct Link
+name: IPTV to FB Live - 1 Min Test
 
 on:
   workflow_dispatch:
 
 jobs:
-  build_and_release:
+  capture_and_stream:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # ضروري للسماح للسكربت بإنشاء الروابط
     steps:
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
       - name: Capture 1 Minute
         run: |
+          # سحب الدقيقة من الرابط الذي أعطيته لي
           ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 \
-          -i "http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/269.ts" \
-          -t 60 -c copy video_test.mp4
+          -i "http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/32750.ts" \
+          -t 60 -c copy test_clip.mp4
 
-      - name: Upload to GitHub Releases
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: video-v1
-          files: video_test.mp4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Show Final Link
+      - name: Stream to Facebook Live
         run: |
-          echo "--------------------------------------------------"
-          echo "✅ تم الرفع على سيرفرات GitHub بنجاح!"
-          echo "🔗 الرابط المباشر للمشاهدة هو:"
-          echo "https://github.com/${{ github.repository }}/releases/download/video-v1/video_test.mp4"
-          echo "--------------------------------------------------"
+          # بث المقطع المسجل إلى فيسبوك بجودة عالية
+          ffmpeg -re -i test_clip.mp4 \
+          -c:v libx264 -preset superfast -b:v 2500k -maxrate 2500k -bufsize 5000k \
+          -s 1280x720 -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv \
+          "rtmps://live-api-s.facebook.com:443/rtmp/FB-907604004962838-0-Ab7JD1tTZvD9Mzw-W8JDnYVO"
+          
