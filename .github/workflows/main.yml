@@ -21,4 +21,3 @@ jobs:
           -c:v libx264 -preset superfast -b:v 2500k -maxrate 2500k -bufsize 5000k \
           -s 1280x720 -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv \
           "rtmps://live-api-s.facebook.com:443/rtmp/FB-907604004962838-0-Ab7JD1tTZvD9Mzw-W8JDnYVO"
-          
