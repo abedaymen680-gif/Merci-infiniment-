@@ -1,26 +1,23 @@
-name: Stable Stream 5 Min Buffer
+name: Super Fast Stream
 on:
   workflow_dispatch:
 jobs:
   stream:
     runs-on: ubuntu-latest
     steps:
-      - name: Install FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
-
-      - name: Buffer and Stream
+      - name: Stream Directly
         run: |
-          # الرابط الذي أرسلته
+          # 1. تثبيت سريع جداً
+          sudo apt-get update -qq && sudo apt-get install -y ffmpeg -qq
+
+          # 2. إعداد الروابط
           VIDEO_URL="http://lion20.top:8080/live/0b:51:8d:44:de:6d/2615252014954555/361508.ts"
-          # مفتاح البث الجديد
           STREAM_KEY="FB-908283328228239-0-Ab6-JQ8245D4aUAi3g2Tjcco"
 
-          # الأمر يقوم بتحميل 5 دقائق أولاً ثم يبدأ البث بسلاسة
-          # استخدمنا -re و -t لضمان المدة المطلوبة
+          # 3. البث المباشر مع تجاوز العقبات
           ffmpeg -re -i "$VIDEO_URL" \
-          -vf "scale=1280:720" -c:v libx264 -preset fast -b:v 2500k \
-          -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 48 \
+          -c:v libx264 -preset ultrafast -b:v 2000k \
+          -maxrate 2000k -bufsize 4000k -pix_fmt yuv420p -g 50 \
           -c:a aac -b:a 128k -ar 44100 \
-          -t 00:05:00 \
           -f flv "rtmp://live-api-s.facebook.com:80/rtmp/$STREAM_KEY"
           
