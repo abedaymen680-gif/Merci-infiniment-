@@ -1,4 +1,4 @@
-name: Stream Link to Facebook
+name: Final Stream HD One Piece
 
 on:
   workflow_dispatch:
@@ -10,16 +10,16 @@ jobs:
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Download and Stream
+      - name: Download and Stream to Facebook
         run: |
-          # الرابط الذي أرسلته
+          # الرابط المباشر للفيديو
           VIDEO_URL="https://av-f2l-bot.avbotz26.workers.dev/30968?hash=AgADiQ"
-          # مفتاح البث الخاص بك
-          STREAM_KEY="FB-907604004962838-0-Ab7JD1tTZvD9Mzw-W8JDnYVO"
+          # مفتاح البث الجديد الخاص بك
+          STREAM_KEY="FB-908068078249764-0-Ab5nxKwvb1aEoFyiqIF3bpNY"
 
-          # أمر البث المباشر باستخدام FFmpeg
+          # أمر البث مع رفع الجودة وتثبيت التردد
           ffmpeg -re -i "$VIDEO_URL" \
-          -c:v libx264 -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k \
-          -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 \
+          -vf "scale=1280:720" -c:v libx264 -preset veryfast -b:v 2500k \
+          -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 48 \
+          -c:a aac -b:a 128k -ar 44100 \
           -f flv "rtmp://live-api-s.facebook.com:80/rtmp/$STREAM_KEY"
-          
