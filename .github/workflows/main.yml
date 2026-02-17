@@ -1,19 +1,26 @@
-name: Test Telegram Connection
+name: Eagle-4K 1 Minute Download
 
 on:
   workflow_dispatch:
 
 jobs:
-  test_send:
+  eagle_process:
     runs-on: ubuntu-latest
     steps:
-      - name: Download Small Test Video
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Download 1 Minute from Eagle Server
         run: |
-          # تحميل فيديو تجريبي صغير جداً (3 ميجا)
-          curl -L -o test.mp4 "https://www.w3schools.com/html/mov_bbb.mp4"
+          # التحميل من الرابط الجديد مع إعدادات إعادة الاتصال
+          ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
+          -user_agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+          -i "http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/269.ts" \
+          -t 60 -c copy -bsf:a aac_adtstoasc eagle_clip.mp4
 
       - name: Send to Telegram
         run: |
-          # محاولة الإرسال لبوتك
-          curl -v -F "video=@test.mp4" -F "caption=الاختبار نجح! البوت شغال ✅" \
+          # إرسال المقطع إلى بوت التليجرام الخاص بك
+          curl -v -F "video=@eagle_clip.mp4" -F "caption=تم تحميل دقيقة من سيرفر Eagle 🦅" \
           "https://api.telegram.org/bot8553237214:AAGnvhfyXa-B5Wkm3g_VQTRVbbr0ShyYM0U/sendVideo?chat_id=6849625315"
+          
