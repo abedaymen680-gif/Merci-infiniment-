@@ -1,26 +1,27 @@
-name: Eagle-4K 1 Minute Download
+name: IPTV to Facebook Direct
 
 on:
   workflow_dispatch:
 
 jobs:
-  eagle_process:
+  upload_to_facebook:
     runs-on: ubuntu-latest
     steps:
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Download 1 Minute from Eagle Server
+      - name: Download 1 Minute from IPTV
         run: |
-          # التحميل من الرابط الجديد مع إعدادات إعادة الاتصال
+          # تحميل دقيقة واحدة مع محاكاة متصفح حقيقي
           ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
           -user_agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
           -i "http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/269.ts" \
-          -t 60 -c copy -bsf:a aac_adtstoasc eagle_clip.mp4
+          -t 60 -c copy -bsf:a aac_adtstoasc fb_video.mp4
 
-      - name: Send to Telegram
+      - name: Post Video to Facebook
         run: |
-          # إرسال المقطع إلى بوت التليجرام الخاص بك
-          curl -v -F "video=@eagle_clip.mp4" -F "caption=تم تحميل دقيقة من سيرفر Eagle 🦅" \
-          "https://api.telegram.org/bot8553237214:AAGnvhfyXa-B5Wkm3g_VQTRVbbr0ShyYM0U/sendVideo?chat_id=6849625315"
-          
+          # الرفع إلى فيسبوك باستخدام التوكن الخاص بك
+          curl -X POST "https://graph-video.facebook.com/v18.0/me/videos" \
+          -F "access_token=EAAYqzXZAr3yQBQn6PUeCtNoy7ZCJTUnl39GZA8lVvWdL1TCBLqSsoFZCzqsua8sLFZClzMq1cmVX7ZCjc1KvNeAGIrdlKhDZCGf627251tXXxSFFPF3D8fayJutZBMZCsn40x4K2lQazCLTX6kOq6O4wxjsorz44i57NjZBXzyrE7rJFF3Coa8FV9QqDjzCL70KJ3UWO4ZClQhgRZB33yKBma4gVfI3CvEDoFY6X69d8" \
+          -F "source=@fb_video.mp4" \
+          -F "description=تم الرفع عبر GitHub Actions - دقيقة تجريبية"
