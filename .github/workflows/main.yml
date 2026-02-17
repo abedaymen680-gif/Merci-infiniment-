@@ -1,4 +1,4 @@
-name: Download then Stream HD
+name: Stable Stream 5 Min Buffer
 on:
   workflow_dispatch:
 jobs:
@@ -8,19 +8,19 @@ jobs:
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: 1. Download Video File
+      - name: Buffer and Stream
         run: |
-          # تحميل الملف وتسميته video.mp4
-          curl -L "https://av-f2l-bot.avbotz26.workers.dev/30968?hash=AgADiQ" -o video.mp4
-          echo "تم تحميل الملف بنجاح على سيرفر GitHub!"
+          # الرابط الذي أرسلته
+          VIDEO_URL="http://lion20.top:8080/live/0b:51:8d:44:de:6d/2615252014954555/361508.ts"
+          # مفتاح البث الجديد
+          STREAM_KEY="FB-908283328228239-0-Ab6-JQ8245D4aUAi3g2Tjcco"
 
-      - name: 2. Stream to Facebook
-        run: |
-          # الآن نبدأ البث من الملف المحمل محلياً لضمان عدم الانقطاع
-          # تأكد من استخراج مفتاح بث جديد إذا انتهت صلاحية القديم
-          STREAM_KEY="FB-908068078249764-0-Ab5nxKwvb1aEoFyiqIF3bpNY"
-          
-          ffmpeg -re -i video.mp4 \
+          # الأمر يقوم بتحميل 5 دقائق أولاً ثم يبدأ البث بسلاسة
+          # استخدمنا -re و -t لضمان المدة المطلوبة
+          ffmpeg -re -i "$VIDEO_URL" \
           -vf "scale=1280:720" -c:v libx264 -preset fast -b:v 2500k \
-          -pix_fmt yuv420p -g 48 -c:a aac -b:a 128k -ar 44100 \
+          -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 48 \
+          -c:a aac -b:a 128k -ar 44100 \
+          -t 00:05:00 \
           -f flv "rtmp://live-api-s.facebook.com:80/rtmp/$STREAM_KEY"
+          
