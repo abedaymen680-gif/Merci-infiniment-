@@ -1,4 +1,4 @@
-name: Get Direct Video Link
+name: Get Direct Video Link V2
 
 on:
   workflow_dispatch:
@@ -12,17 +12,15 @@ jobs:
 
       - name: Download IPTV Clip
         run: |
-          ffmpeg -i "http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/269.ts" \
+          ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 \
+          -i "http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/269.ts" \
           -t 60 -c copy video_clip.mp4
 
-      - name: Upload and Get Link
+      - name: Upload to BashUpload
         run: |
-          # رفع الفيديو والحصول على رابط مباشر
-          echo "URL_RESULT=$(curl --upload-file ./video_clip.mp4 https://transfer.sh/video_clip.mp4)" >> $GITHUB_ENV
-
-      - name: Show the Link
-        run: |
+          # الرفع إلى سيرفر بديل مستقر
+          LINK=$(curl https://bashupload.com/video_clip.mp4 --data-binary @video_clip.mp4)
           echo "--------------------------------------------------"
-          echo "انسخ هذا الرابط وضعه في فيسبوك أو ماسنجر:"
-          echo "${{ env.URL_RESULT }}"
+          echo "تم الرفع بنجاح! انسخ الرابط التالي:"
+          echo $LINK
           echo "--------------------------------------------------"
