@@ -1,4 +1,4 @@
-name: Fast IPTV to Facebook
+name: IPTV to Facebook FINAL
 
 on:
   workflow_dispatch:
@@ -8,7 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install FFmpeg (Quick)
-        # أضفنا -y و --no-install-recommends ليكون التثبيت برقاً
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
 
       - name: Download 1 Minute
@@ -21,7 +20,7 @@ jobs:
       - name: Post to Facebook
         run: |
           curl -X POST "https://graph-video.facebook.com/v18.0/me/videos" \
-          -F "access_token=EAAYqzXZAr3yQBQn6PUeCtNoy7ZCJTUnl39GZA8lVvWdL1TCBLqSsoFZCzqsua8sLFZClzMq1cmVX7ZCjc1KvNeAGIrdlKhDZCGf627251tXXxSFFPF3D8fayJutZBMZCsn40x4K2lQazCLTX6kOq6O4wxjsorz44i57NjZBXzyrE7rJFF3Coa8FV9QqDjzCL70KJ3UWO4ZClQhgRZB33yKBma4gVfI3CvEDoFY6X69d8" \
+          -F "access_token=EAARjVLJq0ZBUBQgZBv3lMhaZAUZA3ZAUrauxhvaVcADAkqZAcrZAATBBikOEWtLyVPLGa9aqi7Nxkkn5zVSzvMptQjAtK96IJURBSOs9k04M9kcvHOIlOO4aWLvbGNClRgvPn4cD4KZBHTZCXxozZBgBzFZCYHZCit4aU2YZAxC3HbeGPG6wFDnX4eaQ24ijTyIg0WfPnncfQZBASYxU0i6BK50jPOr8A8Q6M8oobGhDFkytf8VHfLaqsnsv2w6c7Ua7uj4R7Oprmg8U0WgUqsfckDRRLOi5WNV2RZCd2qv9dCdleAm33v1EA3sHnnZAI8s8qDBHnu7JaMbaRGf6ZBPBUjeUZD" \
           -F "source=@fb_video.mp4" \
-          -F "description=Test Upload"
+          -F "description=Test Success 🚀"
           
