@@ -1,23 +1,23 @@
-name: Super Fast Stream
+name: Eagle-4K Stream
 on:
   workflow_dispatch:
 jobs:
   stream:
     runs-on: ubuntu-latest
     steps:
-      - name: Stream Directly
-        run: |
-          # 1. تثبيت سريع جداً
-          sudo apt-get update -qq && sudo apt-get install -y ffmpeg -qq
+      - name: Install FFmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg -qq
 
-          # 2. إعداد الروابط
-          VIDEO_URL="http://lion20.top:8080/live/0b:51:8d:44:de:6d/2615252014954555/361508.ts"
+      - name: Stream to Facebook
+        run: |
+          # الرابط الجديد
+          VIDEO_URL="Http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/32750.ts"
+          # مفتاح البث (تأكد من تحديثه إذا انتهت صلاحيته)
           STREAM_KEY="FB-908283328228239-0-Ab6-JQ8245D4aUAi3g2Tjcco"
 
-          # 3. البث المباشر مع تجاوز العقبات
-          ffmpeg -re -i "$VIDEO_URL" \
-          -c:v libx264 -preset ultrafast -b:v 2000k \
-          -maxrate 2000k -bufsize 4000k -pix_fmt yuv420p -g 50 \
+          # البث مع إضافة تعريف متصفح لضمان استجابة السيرفر
+          ffmpeg -user_agent "Mozilla/5.0" -re -i "$VIDEO_URL" \
+          -c:v libx264 -preset ultrafast -b:v 2500k \
+          -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 50 \
           -c:a aac -b:a 128k -ar 44100 \
           -f flv "rtmp://live-api-s.facebook.com:80/rtmp/$STREAM_KEY"
-          
