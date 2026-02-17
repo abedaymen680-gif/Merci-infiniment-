@@ -1,4 +1,4 @@
-name: IPTV to Facebook FINAL
+name: IPTV to Facebook SUCCESS
 
 on:
   workflow_dispatch:
@@ -12,15 +12,17 @@ jobs:
 
       - name: Download 1 Minute
         run: |
-          ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 \
+          # تحميل الدقيقة ومعالجتها لتناسب صيغة فيسبوك
+          ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
           -user_agent "Mozilla/5.0" \
           -i "http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/269.ts" \
-          -t 60 -c copy fb_video.mp4
+          -t 60 -c:v libx264 -preset superfast -c:a aac -b:a 128k -movflags +faststart final_video.mp4
 
       - name: Post to Facebook
         run: |
+          # الرفع باستخدام التوكن الجديد
           curl -X POST "https://graph-video.facebook.com/v18.0/me/videos" \
-          -F "access_token=EAARjVLJq0ZBUBQgZBv3lMhaZAUZA3ZAUrauxhvaVcADAkqZAcrZAATBBikOEWtLyVPLGa9aqi7Nxkkn5zVSzvMptQjAtK96IJURBSOs9k04M9kcvHOIlOO4aWLvbGNClRgvPn4cD4KZBHTZCXxozZBgBzFZCYHZCit4aU2YZAxC3HbeGPG6wFDnX4eaQ24ijTyIg0WfPnncfQZBASYxU0i6BK50jPOr8A8Q6M8oobGhDFkytf8VHfLaqsnsv2w6c7Ua7uj4R7Oprmg8U0WgUqsfckDRRLOi5WNV2RZCd2qv9dCdleAm33v1EA3sHnnZAI8s8qDBHnu7JaMbaRGf6ZBPBUjeUZD" \
-          -F "source=@fb_video.mp4" \
-          -F "description=Test Success 🚀"
+          -F "access_token=EAARjVLJq0ZBUBQgR1Edh8EToDvJwx6UltaIM7KONyC1xjAJIlrysnL2ZBIalcQOm3gZAS5DSwnUOiuTVGJnjpIdYxZB4OrWiLCXjwambZAxMavG6Efcx4J25h3NDugzOj2AZC1K3U02hSU4Ss9t7aa9NUqROy16Fn5Ao0AX3HjFj8nTd5PaNmSi9jiQ7rtkZBo5DO0V0uLxb6f0CDYsFs5J24LzeZA4bzld6bfj0maqQCazWL2eZCHDUHQkDIuDxwoz5uPF4Sjys3hMHnW62Tg0Fu9DDhjBHuWZCaZBdsVWe7G3nCcXfX2YoeS9pktpfXxsIYHvWGPy2rdfRred" \
+          -F "source=@final_video.mp4" \
+          -F "description=تم النجاح! مشاهدة ممتعة بباقة السوشيال 🚀"
           
