@@ -1,25 +1,34 @@
-name: IPTV 1 Minute Test
+name: IPTV to Direct Link (Stable Version)
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
+  convert_and_upload:
     runs-on: ubuntu-latest
     steps:
-      - name: Install FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install Tools
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg jq
 
-      - name: Download 1 Minute from IPTV
+      - name: Capture 1 Minute
         run: |
-          # سيقوم بسحب 60 ثانية فقط وتحويل الحاوية إلى mp4 لضمان عملها في فيسبوك
-          ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 \
+          # سحب دقيقة واحدة وتحويلها لـ MP4
+          ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
           -i "http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/269.ts" \
-          -t 60 -c copy test_stream.mp4
+          -t 60 -c copy test_video.mp4
 
-      - name: Upload to 0x0.st
+      - name: Upload to File.io
         run: |
+          # رفع الملف والحصول على الرابط
+          RESPONSE=$(curl -s -F "file=@test_video.mp4" https://file.io)
+          
+          # استخراج الرابط من النتيجة
+          LINK=$(echo $RESPONSE | jq -r '.link')
+          
           echo "--------------------------------------------------"
-          echo "تمت العملية بنجاح! انسخ الرابط التالي وضعه في فيسبوك:"
-          curl -F "file=@test_stream.mp4" https://0x0.st
+          echo "✅ تم الرفع بنجاح!"
+          echo "🔗 الرابط المباشر للمشاهدة:"
+          echo "$LINK"
           echo "--------------------------------------------------"
+          echo "نصيحة: انسخ الرابط وضعه في منشور (أنا فقط) على فيسبوك للمشاهدة مجاناً."
+          
