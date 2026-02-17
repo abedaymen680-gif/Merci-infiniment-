@@ -1,14 +1,25 @@
-name: Catch Facebook HD Link
-on: workflow_dispatch
+name: Stream Link to Facebook
+
+on:
+  workflow_dispatch:
+
 jobs:
-  get_hd:
+  stream:
     runs-on: ubuntu-latest
     steps:
-      - name: Extract HD URL
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Download and Stream
         run: |
-          # سنستخدم yt-dlp مع تحديثه لجلب أفضل جودة فيديو مدمجة مع الصوت
-          sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
-          sudo chmod a+rx /usr/local/bin/yt-dlp
+          # الرابط الذي أرسلته
+          VIDEO_URL="https://av-f2l-bot.avbotz26.workers.dev/30968?hash=AgADiQ"
+          # مفتاح البث الخاص بك
+          STREAM_KEY="FB-907604004962838-0-Ab7JD1tTZvD9Mzw-W8JDnYVO"
+
+          # أمر البث المباشر باستخدام FFmpeg
+          ffmpeg -re -i "$VIDEO_URL" \
+          -c:v libx264 -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k \
+          -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 \
+          -f flv "rtmp://live-api-s.facebook.com:80/rtmp/$STREAM_KEY"
           
-          # استخراج رابط الـ 720p مباشرة
-          yt-dlp -g -f "bestvideo[height<=720]+bestaudio/best[height<=720]" "https://www.facebook.com/gonderen.hakk.nda/videos/788007587069582/"
