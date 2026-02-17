@@ -1,28 +1,28 @@
-name: IPTV to Facebook SUCCESS
+name: Get Direct Video Link
 
 on:
   workflow_dispatch:
 
 jobs:
-  upload:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Install FFmpeg (Quick)
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Download 1 Minute
+      - name: Download IPTV Clip
         run: |
-          # تحميل الدقيقة ومعالجتها لتناسب صيغة فيسبوك
-          ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
-          -user_agent "Mozilla/5.0" \
-          -i "http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/269.ts" \
-          -t 60 -c:v libx264 -preset superfast -c:a aac -b:a 128k -movflags +faststart final_video.mp4
+          ffmpeg -i "http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/269.ts" \
+          -t 60 -c copy video_clip.mp4
 
-      - name: Post to Facebook
+      - name: Upload and Get Link
         run: |
-          # الرفع باستخدام التوكن الجديد
-          curl -X POST "https://graph-video.facebook.com/v18.0/me/videos" \
-          -F "access_token=EAARjVLJq0ZBUBQgR1Edh8EToDvJwx6UltaIM7KONyC1xjAJIlrysnL2ZBIalcQOm3gZAS5DSwnUOiuTVGJnjpIdYxZB4OrWiLCXjwambZAxMavG6Efcx4J25h3NDugzOj2AZC1K3U02hSU4Ss9t7aa9NUqROy16Fn5Ao0AX3HjFj8nTd5PaNmSi9jiQ7rtkZBo5DO0V0uLxb6f0CDYsFs5J24LzeZA4bzld6bfj0maqQCazWL2eZCHDUHQkDIuDxwoz5uPF4Sjys3hMHnW62Tg0Fu9DDhjBHuWZCaZBdsVWe7G3nCcXfX2YoeS9pktpfXxsIYHvWGPy2rdfRred" \
-          -F "source=@final_video.mp4" \
-          -F "description=تم النجاح! مشاهدة ممتعة بباقة السوشيال 🚀"
-          
+          # رفع الفيديو والحصول على رابط مباشر
+          echo "URL_RESULT=$(curl --upload-file ./video_clip.mp4 https://transfer.sh/video_clip.mp4)" >> $GITHUB_ENV
+
+      - name: Show the Link
+        run: |
+          echo "--------------------------------------------------"
+          echo "انسخ هذا الرابط وضعه في فيسبوك أو ماسنجر:"
+          echo "${{ env.URL_RESULT }}"
+          echo "--------------------------------------------------"
