@@ -1,28 +1,35 @@
-name: IPTV to Direct Link (Final Fix)
+name: IPTV to GitHub Direct Link
 
 on:
   workflow_dispatch:
 
 jobs:
-  convert_and_upload:
+  build_and_release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # ضروري للسماح للسكربت بإنشاء الروابط
     steps:
-      - name: Install Tools
+      - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
       - name: Capture 1 Minute
         run: |
           ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 \
           -i "http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/269.ts" \
-          -t 60 -c copy test_video.mp4
+          -t 60 -c copy video_test.mp4
 
-      - name: Upload to BashUpload
+      - name: Upload to GitHub Releases
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: video-v1
+          files: video_test.mp4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Show Final Link
         run: |
           echo "--------------------------------------------------"
-          # الرفع مع التمويه لتجاوز الحظر
-          curl -L -A "Mozilla/5.0" https://bashupload.com/test_video.mp4 --data-binary @test_video.mp4 > result.txt
-          
-          echo "✅ تم الرفع! انسخ الرابط أدناه:"
-          grep -o 'https://bashupload.com/[^ ]*' result.txt | head -n 1
+          echo "✅ تم الرفع على سيرفرات GitHub بنجاح!"
+          echo "🔗 الرابط المباشر للمشاهدة هو:"
+          echo "https://github.com/${{ github.repository }}/releases/download/video-v1/video_test.mp4"
           echo "--------------------------------------------------"
-          
