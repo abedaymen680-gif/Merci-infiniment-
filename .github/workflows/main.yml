@@ -1,4 +1,4 @@
-name: Eagle-4K Stream
+name: Fixed Eagle Stream
 on:
   workflow_dispatch:
 jobs:
@@ -10,14 +10,15 @@ jobs:
 
       - name: Stream to Facebook
         run: |
-          # الرابط الجديد
-          VIDEO_URL="Http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/32750.ts"
-          # مفتاح البث (تأكد من تحديثه إذا انتهت صلاحيته)
-          STREAM_KEY="FB-908283328228239-0-Ab6-JQ8245D4aUAi3g2Tjcco"
+          # الرابط مصحح (h صغيرة)
+          VIDEO_URL="http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/32750.ts"
+          
+          # مفتاح البث الجديد الخاص بك
+          STREAM_KEY="FB-908289544894284-0-Ab7xDyVGOQuosdA6ndKENM3T"
 
-          # البث مع إضافة تعريف متصفح لضمان استجابة السيرفر
           ffmpeg -user_agent "Mozilla/5.0" -re -i "$VIDEO_URL" \
-          -c:v libx264 -preset ultrafast -b:v 2500k \
-          -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 50 \
+          -c:v libx264 -preset ultrafast -b:v 2000k \
+          -maxrate 2000k -bufsize 4000k -pix_fmt yuv420p -g 50 \
           -c:a aac -b:a 128k -ar 44100 \
           -f flv "rtmp://live-api-s.facebook.com:80/rtmp/$STREAM_KEY"
+          
