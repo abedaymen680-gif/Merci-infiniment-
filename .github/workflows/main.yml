@@ -1,24 +1,24 @@
-name: Fixed Eagle Stream
+name: Quick Test 1 Min
 on:
   workflow_dispatch:
+
 jobs:
-  stream:
+  record:
     runs-on: ubuntu-latest
     steps:
       - name: Install FFmpeg
-        run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg -qq
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Stream to Facebook
+      - name: Record 1 Minute HEVC
         run: |
-          # الرابط مصحح (h صغيرة)
-          VIDEO_URL="http://front-main.eagle-4k.me:80/live/imadfr_551967/4fWxfRqg/32750.ts"
-          
-          # مفتاح البث الجديد الخاص بك
-          STREAM_KEY="FB-908289544894284-0-Ab7xDyVGOQuosdA6ndKENM3T"
+          URL="http://5-host.xyz:8080/live/177716153252/17laOe555B/431637.m3u8"
+          ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
+          -i "$URL" -t 60 \
+          -c:v libx265 -crf 28 -preset fast \
+          -c:a copy test_1min.mp4
 
-          ffmpeg -user_agent "Mozilla/5.0" -re -i "$VIDEO_URL" \
-          -c:v libx264 -preset ultrafast -b:v 2000k \
-          -maxrate 2000k -bufsize 4000k -pix_fmt yuv420p -g 50 \
-          -c:a aac -b:a 128k -ar 44100 \
-          -f flv "rtmp://live-api-s.facebook.com:80/rtmp/$STREAM_KEY"
-          
+      - name: Upload Test Video
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-video-file
+          path: test_1min.mp4
