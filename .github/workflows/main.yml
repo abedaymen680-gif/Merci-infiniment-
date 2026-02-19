@@ -1,4 +1,4 @@
-name: Quick Test 1 Min
+name: IPTV Stealth Recorder
 on:
   workflow_dispatch:
 
@@ -9,16 +9,31 @@ jobs:
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Record 1 Minute HEVC
+      - name: Stealth Recording
         run: |
+          # الرابط الخاص بك
           URL="http://5-host.xyz:8080/live/177716153252/17laOe555B/431637.m3u8"
-          ffmpeg -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
-          -i "$URL" -t 60 \
-          -c:v libx265 -crf 28 -preset fast \
-          -c:a copy test_1min.mp4
+          
+          # نستخدم هوية متصفح كروم على أندرويد للتمويه
+          USER_AGENT="Mozilla/5.0 (Linux; Android 10; SM-G981B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Mobile Safari/537.36"
+          
+          ffmpeg -hide_banner -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
+          -user_agent "$USER_AGENT" \
+          -i "$URL" -t 1800 \
+          -c:v libx265 -crf 28 -preset ultrafast \
+          -c:a copy output_30min.mp4
 
-      - name: Upload Test Video
+      - name: Upload to Transfer.sh (رابط تحميل مباشر)
+        if: always()
+        run: |
+          # سنرفعه لموقع خارجي ليعطيك رابطاً تضغط عليه ويحمل فوراً
+          curl --upload-file ./output_30min.mp4 https://transfer.sh/output_30min.mp4 > download_link.txt
+          echo "رابط التحميل المباشر هو: "
+          cat download_link.txt
+
+      - name: Upload to GitHub Artifacts (احتياطي)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-video-file
-          path: test_1min.mp4
+          name: my-video
+          path: output_30min.mp4
