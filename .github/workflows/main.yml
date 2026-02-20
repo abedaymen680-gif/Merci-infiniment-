@@ -1,39 +1,41 @@
-name: IPTV Stealth Recorder
+name: Video Catcher Pro
 on:
   workflow_dispatch:
+    inputs:
+      url:
+        description: 'رابط البث المباشر'
+        required: true
+      duration:
+        description: 'المدة بالدقائق'
+        required: true
+        default: '10'
 
 jobs:
-  record:
+  capture_job:
     runs-on: ubuntu-latest
     steps:
-      - name: Install FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Setup Environment
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg curl
 
-      - name: Stealth Recording
+      - name: Capture and Compress
         run: |
-          # الرابط الخاص بك
-          URL="http://5-host.xyz:8080/live/177716153252/17laOe555B/431637.m3u8"
+          # بياناتك مباشرة في السكربت
+          TOKEN="8589322439:AAEmq9nKn8K5RORCPLx8pQ-wAYVaNj8NM9g"
+          CHAT_ID="6849625315"
+          URL="${{ github.event.inputs.url }}"
+          MIN="${{ github.event.inputs.duration }}"
+          SEC=$(( $MIN * 60 ))
           
-          # نستخدم هوية متصفح كروم على أندرويد للتمويه
-          USER_AGENT="Mozilla/5.0 (Linux; Android 10; SM-G981B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Mobile Safari/537.36"
+          echo "📡 جاري سحب البث لمدة $MIN دقيقة..."
+          ffmpeg -y -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -i "$URL" -t $SEC -c copy raw.ts
           
-          ffmpeg -hide_banner -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
-          -user_agent "$USER_AGENT" \
-          -i "$URL" -t 1800 \
-          -c:v libx265 -crf 28 -preset ultrafast \
-          -c:a copy output_30min.mp4
-
-      - name: Upload to Transfer.sh (رابط تحميل مباشر)
-        if: always()
-        run: |
-          # سنرفعه لموقع خارجي ليعطيك رابطاً تضغط عليه ويحمل فوراً
-          curl --upload-file ./output_30min.mp4 https://transfer.sh/output_30min.mp4 > download_link.txt
-          echo "رابط التحميل المباشر هو: "
-          cat download_link.txt
-
-      - name: Upload to GitHub Artifacts (احتياطي)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: my-video
-          path: output_30min.mp4
+          echo "⚙️ جاري الضغط (HEVC)... قد يستغرق هذا دقائق..."
+          ffmpeg -y -i raw.ts -c:v libx265 -crf 28 -preset ultrafast -c:a aac -movflags faststart final.mp4
+          
+          SIZE=$(du -h final.mp4 | cut -f1)
+          
+          echo "✅ تم القنص! جاري الإرسال لتلجرام..."
+          # إرسال الفيديو باستخدام Curl
+          curl -v -F "video=@final.mp4" -F "caption=🎥 تم القنص بنجاح!%0A⏱️ المدة: $MIN دقيقة%0A📦 الحجم: $SIZE" \
+          "https://api.telegram.org/bot$TOKEN/sendVideo?chat_id=$CHAT_ID"
+          
