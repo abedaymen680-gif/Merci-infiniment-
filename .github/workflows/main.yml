@@ -1,41 +1,20 @@
-name: Video Catcher Pro
+name: Continuous Bot
 on:
-  workflow_dispatch:
-    inputs:
-      url:
-        description: 'رابط البث المباشر'
-        required: true
-      duration:
-        description: 'المدة بالدقائق'
-        required: true
-        default: '10'
+  schedule:
+    - cron: '0 */6 * * *' # سيعيد تشغيل نفسه كل 6 ساعات لضمان الصمود
+  workflow_dispatch: # للتشغيل اليدوي لأول مرة
 
 jobs:
-  capture_job:
+  run_bot:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Environment
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg curl
-
-      - name: Capture and Compress
-        run: |
-          # بياناتك مباشرة في السكربت
-          TOKEN="8589322439:AAEmq9nKn8K5RORCPLx8pQ-wAYVaNj8NM9g"
-          CHAT_ID="6849625315"
-          URL="${{ github.event.inputs.url }}"
-          MIN="${{ github.event.inputs.duration }}"
-          SEC=$(( $MIN * 60 ))
-          
-          echo "📡 جاري سحب البث لمدة $MIN دقيقة..."
-          ffmpeg -y -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -i "$URL" -t $SEC -c copy raw.ts
-          
-          echo "⚙️ جاري الضغط (HEVC)... قد يستغرق هذا دقائق..."
-          ffmpeg -y -i raw.ts -c:v libx265 -crf 28 -preset ultrafast -c:a aac -movflags faststart final.mp4
-          
-          SIZE=$(du -h final.mp4 | cut -f1)
-          
-          echo "✅ تم القنص! جاري الإرسال لتلجرام..."
-          # إرسال الفيديو باستخدام Curl
-          curl -v -F "video=@final.mp4" -F "caption=🎥 تم القنص بنجاح!%0A⏱️ المدة: $MIN دقيقة%0A📦 الحجم: $SIZE" \
-          "https://api.telegram.org/bot$TOKEN/sendVideo?chat_id=$CHAT_ID"
-          
+      - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install pyTelegramBotAPI
+      - name: Run Bot
+        run: python bot.py
+        
