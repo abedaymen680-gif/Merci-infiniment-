@@ -1,20 +1,25 @@
 name: Continuous Bot
 on:
-  schedule:
-    - cron: '0 */6 * * *' # سيعيد تشغيل نفسه كل 6 ساعات لضمان الصمود
-  workflow_dispatch: # للتشغيل اليدوي لأول مرة
+  workflow_dispatch: # للتشغيل اليدوي من تبويب Actions
 
 jobs:
   run_bot:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      - name: Install dependencies
-        run: pip install pyTelegramBotAPI
+
+      - name: Install FFmpeg and Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          pip install pyTelegramBotAPI
+
       - name: Run Bot
         run: python bot.py
         
