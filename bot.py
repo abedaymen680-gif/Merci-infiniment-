@@ -1,12 +1,13 @@
 import os, subprocess, telebot, time, re
 
+# إعدادات البوت
 TOKEN = "8589322439:AAE7PESv8wSmSp5sOsVIfo60Uzs8KhrKkXw"
 MY_ID = 6849625315
 bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(MY_ID, "🚀 نظام القناص المطور (HEVC):\n✅ تم إصلاح خطأ الملف المفقود\n✅ ضغط H.265 مفعل")
+    bot.send_message(MY_ID, "🛡️ تم تشغيل نظام القناص الاحترافي\n━━━━━━━━━━━━━\n✅ ترميز HEVC (H.265) نشط\n✅ عداد السحب والضغط مفعل\n✅ الرفع المباشر: Temp.sh\n━━━━━━━━━━━━━\nأرسل رابط البث الآن.")
 
 @bot.message_handler(func=lambda message: True)
 def handle_msg(message):
@@ -24,26 +25,43 @@ def process_video(message, url):
         
         status_msg = bot.send_message(MY_ID, "📥 **المرحلة 1: جاري سحب البث...**")
 
-        # 1. سحب البث
-        cmd_pull = ['ffmpeg', '-y', '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_at_eof', '1', '-i', url, '-t', str(total_seconds), '-c', 'copy', raw_file]
-        subprocess.run(cmd_pull)
-
-        # 2. الضغط الحقيقي (HEVC) - تم تعديل الخيارات لضمان الاستقرار
-        bot.edit_message_text("⚙️ **المرحلة 2: جاري الضغط بنظام HEVC...**", MY_ID, status_msg.message_id)
+        # 1. سحب البث مع عداد التقدم
+        cmd_pull = [
+            'ffmpeg', '-y', '-reconnect', '1', 
+            '-reconnect_streamed', '1', '-reconnect_at_eof', '1', 
+            '-i', url, '-t', str(total_seconds), 
+            '-c', 'copy', raw_file
+        ]
         
-        # استخدمنا libx265 مع خيارات تضمن إنتاج الملف بدون أخطاء
+        proc_pull = subprocess.Popen(cmd_pull, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        
+        last_update = 0
+        for line in proc_pull.stdout:
+            match = re.search(r"time=(\d+):(\d+):(\d+)", line)
+            if match and (time.time() - last_update >= 10):
+                h, m, s = map(int, match.groups())
+                curr = h*3600 + m*60 + s
+                p = min(int((curr/total_seconds)*100), 100)
+                try:
+                    bot.edit_message_text(f"📥 **جاري السحب:**\n✅ المنجز: {p}% ({curr}/{total_seconds} ثانية)", MY_ID, status_msg.message_id)
+                except: pass
+                last_update = time.time()
+        proc_pull.wait()
+
+        # 2. الضغط بنظام HEVC (مثل كولاب) مع عداد التقدم
+        bot.edit_message_text("⚙️ **المرحلة 2: جاري الضغط بنظام HEVC (H.265)...**", MY_ID, status_msg.message_id)
+        
         cmd_comp = [
             'ffmpeg', '-y', '-i', raw_file,
             '-c:v', 'libx265',
             '-crf', '28',
             '-preset', 'ultrafast',
-            '-pix_fmt', 'yuv420p', # مهم جداً للتوافق ومنع الأخطاء
+            '-pix_fmt', 'yuv420p',
             '-c:a', 'aac',
             '-tag:v', 'hvc1',
             final_file
         ]
         
-        # تشغيل الضغط ومراقبة التقدم
         proc_comp = subprocess.Popen(cmd_comp, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
         
         last_update = 0
@@ -53,34 +71,38 @@ def process_video(message, url):
                 h, m, s = map(int, match.groups())
                 curr = h*3600 + m*60 + s
                 p = min(int((curr/total_seconds)*100), 100)
-                try: bot.edit_message_text(f"⚙️ **جاري الضغط (HEVC):**\n✅ المنجز: {p}%", MY_ID, status_msg.message_id)
+                try:
+                    bot.edit_message_text(f"⚙️ **جاري الضغط (HEVC):**\n✅ المنجز: {p}%", MY_ID, status_msg.message_id)
                 except: pass
                 last_update = time.time()
         proc_comp.wait()
 
-        # التأكد من وجود الملف قبل الرفع
+        # التأكد من نجاح إنتاج الملف
         if not os.path.exists(final_file):
-            raise Exception("فشل إنتاج ملف HEVC. قد لا يدعم السيرفر هذا النوع.")
+            raise Exception("تعذر العثور على ملف الفيديو بعد الضغط!")
 
-        # 3. الرفع
+        # 3. الرفع والحصول على الرابط
         size = os.path.getsize(final_file) / (1024*1024)
-        bot.edit_message_text(f"🚀 اكتمل الضغط ({size:.2f} MB). جاري الرفع...", MY_ID, status_msg.message_id)
+        bot.edit_message_text(f"🚀 اكتمل الضغط بنجاح ({size:.2f} MB).\nجاري استخراج رابط التحميل المباشر...", MY_ID, status_msg.message_id)
         
-        upload_cmd = f"curl -F 'file=@{final_file}' https://temp.sh/upload"
-        link = subprocess.check_output(upload_cmd, shell=True).decode('utf-8').strip()
+        try:
+            upload_cmd = f"curl -F 'file=@{final_file}' https://temp.sh/upload"
+            link = subprocess.check_output(upload_cmd, shell=True).decode('utf-8').strip()
+        except:
+            link = ""
 
         if link and "http" in link:
-            bot.send_message(MY_ID, f"✅ تم بنجاح!\n🎞️ الترميز: HEVC (H.265)\n📦 الحجم: {size:.2f} MB\n🔗 الرابط:\n{link}")
+            bot.send_message(MY_ID, f"✅ **تمت المهمة بنجاح!**\n\n🎞️ الترميز: HEVC (H.265)\n📦 الحجم النهائي: {size:.2f} MB\n🔗 رابط التحميل المباشر:\n{link}")
         else:
-            bot.send_message(MY_ID, "⚠️ فشل الرفع، جاري المحاولة عبر تلجرام...")
+            bot.send_message(MY_ID, "⚠️ فشل الرفع الخارجي، جاري الإرسال المباشر عبر تلجرام...")
             with open(final_file, 'rb') as f:
-                bot.send_video(MY_ID, f)
+                bot.send_video(MY_ID, f, caption=f"🎞️ HEVC | 📦 {size:.2f} MB")
             
-        # تنظيف
-        for f in [raw_file, final_file]:
-            if os.path.exists(f): os.remove(f)
+        # تنظيف الملفات المؤقتة
+        if os.path.exists(raw_file): os.remove(raw_file)
+        if os.path.exists(final_file): os.remove(final_file)
             
     except Exception as e:
-        bot.send_message(MY_ID, f"❌ خطأ: {e}")
+        bot.send_message(MY_ID, f"❌ خطأ في النظام: {e}")
 
 bot.polling(none_stop=True)
