@@ -1,7 +1,7 @@
 import os, subprocess, telebot, time, re
 
 # إعدادات البوت
-TOKEN = "8589322439:AAE7PESv8wSmSp5sOsVIfo60Uzs8KhrKkXw"
+TOKEN = "8589322439:AAGfZp8M70CZ7HM6O8nI6RPPRvnqTarvy38"
 MY_ID = 6849625315
 bot = telebot.TeleBot(TOKEN)
 
@@ -101,3 +101,4 @@ def process_video(message, url):
         bot.send_message(MY_ID, f"❌ خطأ: {e}")
 
 bot.polling(none_stop=True)
+        
