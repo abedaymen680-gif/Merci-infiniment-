@@ -7,7 +7,23 @@ bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(MY_ID, "🛡️ نظام القناص (إصدار Temp.sh):\n✅ الصيغة: MPEG-TS\n✅ الضغط: HEVC\nأرسل الرابط الآن.")
+    welcome_msg = (
+        "🛡️ تم تشغيل نظام القناص الاحترافي\n"
+        "━━━━━━━━━━━━━\n"
+        "✅ ترميز HEVC (H.265) نشط\n"
+        "✅ عداد السحب والضغط مفعل\n"
+        "✅ الرفع المباشر: Temp.sh\n"
+        "━━━━━━━━━━━━━\n"
+        "أرسل رابط البث الآن."
+    )
+    bot.send_message(MY_ID, welcome_msg)
+
+def create_progress_bar(percent):
+    """صناعة شكل شريط التحميل"""
+    bar_length = 10
+    filled_length = int(bar_length * percent / 100)
+    bar = "▓" * filled_length + "░" * (bar_length - filled_length)
+    return bar
 
 @bot.message_handler(func=lambda message: True)
 def handle_msg(message):
@@ -20,46 +36,62 @@ def process_video(message, url):
     try:
         minutes = float(message.text)
         total_seconds = int(minutes * 60)
-        
-        # ملفات مؤقتة بأسماء فريدة لتجنب التداخل
         timestamp = int(time.time())
         raw_file = f"raw_{timestamp}.ts"
         final_file = f"video_{timestamp}.ts"
         
-        status = bot.send_message(MY_ID, "📥 **جاري سحب البث...**")
+        status_msg = bot.send_message(MY_ID, "📥 **بدء سحب البث...**")
 
-        # 1. سحب البث
-        subprocess.run(['ffmpeg', '-y', '-reconnect', '1', '-i', url, '-t', str(total_seconds), '-c', 'copy', raw_file])
+        # 1. سحب البث مع عداد (بناءً على الوقت)
+        cmd_pull = ['ffmpeg', '-y', '-reconnect', '1', '-i', url, '-t', str(total_seconds), '-c', 'copy', raw_file]
+        process_pull = subprocess.Popen(cmd_pull, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+        
+        last_update = 0
+        for line in process_pull.stdout:
+            if "time=" in line:
+                time_match = re.search(r'time=(\d+:\d+:\d+.\d+)', line)
+                if time_match:
+                    h, m, s = map(float, time_match.group(1).split(':'))
+                    current_secs = h * 3600 + m * 60 + s
+                    percent = min(100, int((current_secs / total_seconds) * 100))
+                    if time.time() - last_update > 5:
+                        bot.edit_message_text(f"📥 **جاري سحب البث...**\n\n{create_progress_bar(percent)} {percent}%", MY_ID, status_msg.message_id)
+                        last_update = time.time()
+        process_pull.wait()
 
-        # 2. الضغط بنظام HEVC (H.265) داخل حاوية TS
-        bot.edit_message_text("⚙️ **جاري الضغط (HEVC)...**", MY_ID, status.message_id)
+        # 2. الضغط مع عداد النسبة المئوية
+        bot.edit_message_text("⚙️ **جاري معالجة وضغط الفيديو...**", MY_ID, status_msg.message_id)
         
         cmd_comp = [
             'ffmpeg', '-y', '-i', raw_file,
             '-c:v', 'libx265', '-crf', '28', '-preset', 'ultrafast',
-            '-c:a', 'aac', '-f', 'mpegts', 
-            final_file
+            '-c:a', 'aac', '-f', 'mpegts', final_file
         ]
-        subprocess.run(cmd_comp)
-
-        # 3. الرفع على Temp.sh
-        size = os.path.getsize(final_file) / (1024*1024)
-        bot.edit_message_text(f"🚀 اكتمل الضغط ({size:.2f} MB). جاري الرفع على Temp.sh...", MY_ID, status.message_id)
         
-        try:
-            # استخدام curl للرفع على temp.sh
-            upload_cmd = f"curl -F 'file=@{final_file}' https://temp.sh/upload"
-            link = subprocess.check_output(upload_cmd, shell=True).decode('utf-8').strip()
-        except:
-            link = None
+        process_comp = subprocess.Popen(cmd_comp, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+        
+        last_update = 0
+        for line in process_comp.stdout:
+            if "time=" in line:
+                time_match = re.search(r'time=(\d+:\d+:\d+.\d+)', line)
+                if time_match:
+                    h, m, s = map(float, time_match.group(1).split(':'))
+                    current_secs = h * 3600 + m * 60 + s
+                    percent = min(100, int((current_secs / total_seconds) * 100))
+                    if time.time() - last_update > 5:
+                        bot.edit_message_text(f"⚙️ **جاري الضغط (HEVC)...**\n\n{create_progress_bar(percent)} {percent}%", MY_ID, status_msg.message_id)
+                        last_update = time.time()
+        process_comp.wait()
 
-        if link and "http" in link:
-            # تنبيه المستخدم أن الملف TS لسهولة التحميل الجزئي
-            bot.send_message(MY_ID, f"✅ **تم القنص بنجاح!**\n\n🔗 رابط Temp.sh:\n{link}\n\n💡 ملاحظة: الملف بصيغة .ts ليعمل معك في ترمكس حتى لو حملت 5 ميجا فقط.")
+        # 3. الرفع
+        bot.edit_message_text("🚀 **اكتملت المعالجة! جاري الرفع الآن...**", MY_ID, status_msg.message_id)
+        upload_cmd = f"curl -F 'file=@{final_file}' https://temp.sh/upload"
+        link = subprocess.check_output(upload_cmd, shell=True).decode('utf-8').strip()
+
+        if link:
+            bot.send_message(MY_ID, f"✅ **تم القنص بنجاح!**\n\n🔗 الرابط:\n{link}")
         else:
-            bot.send_message(MY_ID, "⚠️ فشل الرفع، جاري إرسال الملف مباشرة...")
-            with open(final_file, 'rb') as f:
-                bot.send_document(MY_ID, f)
+            bot.send_document(MY_ID, open(final_file, 'rb'))
             
         # تنظيف
         for f in [raw_file, final_file]:
