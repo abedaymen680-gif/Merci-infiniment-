@@ -1,6 +1,6 @@
 name: Continuous Bot
 on:
-  workflow_dispatch: # للتشغيل اليدوي من تبويب Actions
+  workflow_dispatch:
 
 jobs:
   run_bot:
@@ -14,7 +14,7 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install FFmpeg and Dependencies
+      - name: Install FFmpeg and Bot Library
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
