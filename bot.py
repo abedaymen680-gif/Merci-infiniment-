@@ -18,14 +18,23 @@ def get_video_duration(file_path):
         return float(duration)
     except: return 0
 
+def upload_to_temp(file_path):
+    try:
+        # الرفع إلى temp.sh والحصول على الرابط المباشر
+        cmd = f"curl -T {file_path} https://temp.sh/{os.path.basename(file_path)}"
+        link = subprocess.check_output(cmd, shell=True).decode('utf-8').strip()
+        return link
+    except:
+        return "❌ فشل الرفع إلى Temp.sh"
+
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(MY_ID, "🚀 **قناص المحترفين (سحب + ضغط HEVC)**\n\nالعدادات مفعلة لكل العمليات، أرسل الرابط الآن.")
+    bot.send_message(MY_ID, "🚀 **قناص المحترفين (HEVC + Temp.sh)**\n\nصوت أصلي، حجم مثالي، ورابط مباشر.")
 
 @bot.message_handler(func=lambda message: message.text.startswith("http"))
 def handle_msg(message):
     url = message.text.strip()
-    msg = bot.send_message(MY_ID, "⏱️ كم **ثانية** تريد قنصها ومعالجتها؟")
+    msg = bot.send_message(MY_ID, "⏱️ كم **ثانية** تريد قنصها؟")
     bot.register_next_step_handler(msg, lambda m: process_video(m, url))
 
 def process_video(message, url):
@@ -33,10 +42,10 @@ def process_video(message, url):
         total_seconds = int(message.text)
         timestamp = int(time.time())
         raw_file = f"raw_{timestamp}.ts"
-        final_file = f"pro_{timestamp}.mp4"
-        status_msg = bot.send_message(MY_ID, "⏳ جاري تهيئة الاتصال بسيرفرات جوجل...")
+        final_file = f"hevc_{timestamp}.mp4"
+        status_msg = bot.send_message(MY_ID, "⏳ جاري بدء العملية...")
 
-        # --- المرحلة الأولى: السحب (Download) مع عداد ---
+        # --- 1. سحب البث الخام ---
         cmd_pull = ['ffmpeg', '-y', '-i', url, '-t', str(total_seconds), '-c', 'copy', raw_file]
         process_pull = subprocess.Popen(cmd_pull, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
         
@@ -48,25 +57,24 @@ def process_video(message, url):
                     h, m, s = map(float, time_match.group(1).split(':'))
                     current_secs = h * 3600 + m * 60 + s
                     percent = min(100, int((current_secs / total_seconds) * 100))
-                    bot.edit_message_text(f"📥 **1. جاري سحب البث...**\n{create_progress_bar(percent)} {percent}%\n⏱️ المنجز: {int(current_secs)}/{total_seconds}ث", MY_ID, status_msg.message_id)
+                    bot.edit_message_text(f"📥 **1. جاري سحب الخام...**\n{create_progress_bar(percent)} {percent}%", MY_ID, status_msg.message_id)
                     last_update = time.time()
         process_pull.wait()
 
-        # --- المرحلة الثانية: الضغط الاحترافي (HEVC) مع عداد ---
-        # نستخدم -c:a copy لضمان عدم لمس جودة الصوت نهائياً
+        # --- 2. الضغط الاحترافي (HEVC) ---
         actual_duration = get_video_duration(raw_file)
         if actual_duration == 0: actual_duration = total_seconds
-
-        bot.edit_message_text(f"⚙️ **2. جاري الضغط الاحترافي (HEVC)...**\nانتظر قليلاً...", MY_ID, status_msg.message_id)
         
+        bot.edit_message_text("⚙️ **2. جاري الضغط الاحترافي (HEVC)...**", MY_ID, status_msg.message_id)
+        
+        # استخدمنا -crf 30 لتقليل الحجم أكثر مع بقاء الجودة ممتازة
         cmd_comp = [
             'ffmpeg', '-y', '-i', raw_file,
-            '-c:v', 'libx265', '-crf', '28', '-preset', 'faster',
+            '-c:v', 'libx265', '-crf', '30', '-preset', 'faster',
             '-c:a', 'copy', final_file
         ]
         
         process_comp = subprocess.Popen(cmd_comp, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
-        
         last_update = 0
         for line in process_comp.stdout:
             if "time=" in line:
@@ -75,30 +83,31 @@ def process_video(message, url):
                     h, m, s = map(float, time_match.group(1).split(':'))
                     current_secs = h * 3600 + m * 60 + s
                     percent = min(100, int((current_secs / actual_duration) * 100))
-                    bot.edit_message_text(f"⚙️ **2. جاري الضغط وتقليل الحجم...**\n{create_progress_bar(percent)} {percent}%\n🔊 الصوت: محفوظ (Original)", MY_ID, status_msg.message_id)
+                    bot.edit_message_text(f"⚙️ **2. جاري الضغط (HEVC)...**\n{create_progress_bar(percent)} {percent}%\n🔊 الصوت: أصلي", MY_ID, status_msg.message_id)
                     last_update = time.time()
         process_comp.wait()
 
-        # حسابات الحجم والاستهلاك
+        # --- 3. الرفع والحسابات ---
         size_mb = os.path.getsize(final_file) / (1024 * 1024)
         consumption_per_hour_gb = (size_mb / actual_duration * 3600) / 1024
 
-        bot.edit_message_text("🚀 جاري الرفع إلى تلجرام...", MY_ID, status_msg.message_id)
+        bot.edit_message_text("☁️ جاري الرفع إلى Temp.sh وتجهيز التلجرام...", MY_ID, status_msg.message_id)
         
+        temp_link = upload_to_temp(raw_file) # نرفع الملف الخام للرابط لأعلى جودة
+
         with open(final_file, 'rb') as f:
             bot.send_video(MY_ID, f, caption=(
-                f"💎 **تم المعالجة باحترافية (HEVC)**\n\n"
-                f"📦 الحجم النهائي: {size_mb:.2f} ميجابايت\n"
-                f"🔊 جودة الصوت: أصلية 100%\n"
-                f"📊 الاستهلاك الساعي المتوقع: {consumption_per_hour_gb:.2f} جيجابايت"
+                f"💎 **تم القنص والضغط بنجاح**\n\n"
+                f"📦 الحجم: {size_mb:.2f} ميجابايت\n"
+                f"📊 الاستهلاك الساعي: {consumption_per_hour_gb:.2f} جيجابايت\n\n"
+                f"🔗 رابط الملف الخام (Direct): \n{temp_link}"
             ))
 
-        # تنظيف الملفات المؤقتة
         for f in [raw_file, final_file]:
             if os.path.exists(f): os.remove(f)
 
     except Exception as e:
         bot.send_message(MY_ID, f"❌ حدث خطأ: {e}")
 
-print("💀 Professional Sniper is Active...")
+print("💀 Pro Sniper is running...")
 bot.polling(none_stop=True)
